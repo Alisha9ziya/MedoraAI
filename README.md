@@ -1,86 +1,166 @@
-# Medical Chatbot (RAG + LLM)
+# MedoraAI — Medical RAG Assistant
 
-A production-ready medical chatbot using Retrieval-Augmented Generation, built on **LangChain**, **Pinecone**, and **Flask**. It ingests clinical reference material, retrieves relevant context semantically, and generates grounded, citation-backed answers via a hosted LLM.
+MedoraAI is a medical-domain question-answering application built using **Retrieval-Augmented Generation (RAG)**. The system retrieves relevant information from an indexed medical knowledge base and provides it as context to an LLM before generating a response.
 
-## Highlights
+The project combines **LangChain, Pinecone, Hugging Face sentence-transformer embeddings, OpenAI GPT-4.1-mini, and Flask** to implement an end-to-end RAG-based application.
 
-- Semantic retrieval with Pinecone embeddings
-- LangChain pipelines for ingestion, retrieval, and generation
-- Flask web UI and API
-- Docker + AWS ECR/EC2 deployment with GitHub Actions CI/CD
-- Safety-first design: provenance tracking, conservative generation, human-in-the-loop review
+## Features
 
-## Prerequisites
+* Semantic retrieval of relevant medical information
+* Vector storage and similarity search using Pinecone
+* Sentence-transformer based text embeddings
+* LangChain-based retrieval and generation pipeline
+* LLM-powered response generation using OpenAI GPT-4.1-mini
+* Flask backend with a web-based interface
+* Environment-based configuration for API credentials
 
-- Python 3.10+
-- Conda or virtualenv
-- Pinecone account + API key
-- OpenAI API key (or other configured LLM provider)
-- Docker and AWS account (for deployment)
+## Tech Stack
 
-## Quickstart
-
-```bash
-git clone https://github.com/humayun-mhk/Medical-Chatbot-RAG-LLM.git
-cd Medical-Chatbot-RAG-LLM
-
-conda create -n medibot python=3.10 -y
-conda activate medibot
-pip install -r requirements.txt
-```
-
-Create a `.env` file:
-
-```
-PINECONE_API_KEY="your_pinecone_api_key"
-PINECONE_ENV="us-east1-gcp"
-OPENAI_API_KEY="your_openai_api_key"
-```
-
-Build the index and run the app:
-
-```bash
-python store_index.py
-python app.py
-```
+| Component            | Technology                         |
+| -------------------- | ---------------------------------- |
+| Programming Language | Python                             |
+| LLM                  | OpenAI GPT-4.1-mini                |
+| RAG Framework        | LangChain                          |
+| Vector Database      | Pinecone                           |
+| Embeddings           | Hugging Face Sentence Transformers |
+| Backend              | Flask                              |
+| Frontend             | HTML, CSS, JavaScript              |
 
 ## How It Works
 
-1. **Ingestion** – Clinical texts are chunked (with source/page metadata) and embedded.
-2. **Retrieval** – Pinecone performs nearest-neighbor search over the vector index.
-3. **Re-ranking** – Top candidates are re-scored for relevance; low-confidence results trigger abstention.
-4. **Generation** – The LLM answers using retrieved context, citing sources for verification.
+The application follows a standard Retrieval-Augmented Generation workflow:
 
-## Data Sources
+```text
+User Query
+    ↓
+Flask Backend
+    ↓
+Query Embedding
+    ↓
+Pinecone Similarity Search
+    ↓
+Relevant Medical Context
+    ↓
+LangChain RAG Pipeline
+    ↓
+GPT-4.1-mini
+    ↓
+Generated Response
+```
 
-All ingested material is vetted clinical/textbook content, stripped of PHI. Any custom clinical or EHR data must be de-identified and compliant with applicable regulations before ingestion.
+### 1. Document Processing
 
-## Tuning Guide
+Medical reference material is processed into smaller text segments to make relevant information easier to retrieve.
 
-| Parameter | Recommendation |
-|---|---|
-| Chunk size | 500–1000 chars, 100–200 overlap |
-| Embedding model | OpenAI `text-embedding-3-small/large`, or clinical SBERT |
-| Similarity | Cosine or inner product |
-| Retrieval | Fetch k=50, re-rank to top 10 |
-| Threshold | Cosine ≥ 0.7–0.8 (tune on labeled data) |
+### 2. Embedding Generation
 
-## Safety & Evaluation
+The text segments are converted into vector representations using a sentence-transformer embedding model.
 
-- Responses include citations and source snippets
-- Retrieval/generation traces are logged for monitoring
-- Evaluated via precision@k, recall@k, MRR, NDCG
-- High-stakes outputs require clinician review
+### 3. Vector Retrieval
 
-## Deployment
+The generated embeddings are stored in **Pinecone**. When a user submits a question, the system performs a similarity search to retrieve relevant information from the indexed knowledge base.
 
-- Dockerfile builds the Flask app image
-- GitHub Actions builds, tags, and pushes to AWS ECR
-- EC2 pulls and runs the container (IAM roles required for ECR/EC2 access)
+### 4. Response Generation
 
-**Required GitHub Secrets:**
-`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION`, `ECR_REPO`, `PINECONE_API_KEY`, `OPENAI_API_KEY`
+The retrieved context is passed to the LLM through the LangChain pipeline. The model uses the provided context to generate the final response.
+
+## Project Structure
+
+```text
+MedoraAI/
+│
+├── src/
+│   └── helper.py
+│
+├── static/
+│   ├── app.js
+│   └── style.css
+│
+├── templates/
+│   └── chat.html
+│
+├── app.py
+├── store_index.py
+├── requirements.txt
+├── setup.py
+├── Dockerfile
+├── .gitignore
+└── README.md
+```
+
+## Installation
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/Alisha9ziya/MedoraAI.git
+cd MedoraAI
+```
+
+### 2. Create a virtual environment
+
+Using Python's built-in virtual environment:
+
+```bash
+python -m venv venv
+```
+
+Activate it on Windows:
+
+```bash
+venv\Scripts\activate
+```
+
+### 3. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Configure API credentials
+
+Create a `.env` file in the project root:
+
+```env
+OPENAI_API_KEY=your_openai_api_key
+PINECONE_API_KEY=your_pinecone_api_key
+```
+
+Do not commit the `.env` file or expose API credentials publicly.
+
+### 5. Run the application
+
+```bash
+python app.py
+```
+
+The Flask development server will start locally. Open the address shown in the terminal to access the application.
+
+## Example
+
+A user can submit a medical question such as:
+
+```text
+What is diabetes?
+```
+
+The application retrieves relevant information from the indexed knowledge base and provides the retrieved context to the LLM before generating the response.
+
+## Medical Safety
+
+MedoraAI is an educational and technical demonstration of a medical-domain RAG system. It is **not intended to replace professional medical advice, diagnosis, or treatment**.
+
+Information generated by the application should be verified using appropriate medical sources and qualified healthcare professionals.
+
+## Future Improvements
+
+* Improve retrieval quality through better document chunking and retrieval strategies
+* Add systematic evaluation of retrieval and response quality
+* Improve source attribution and document-level citations
+* Add conversation memory for multi-turn interactions
+* Expand the medical knowledge base
+* Deploy the application for broader testing
 
 ## License
 
-Provided as-is. Ensure proper rights/compliance if including third-party medical content or patient data.
+This repository includes an Apache-2.0 license. Refer to the `LICENSE` file for the applicable terms.
